@@ -1,5 +1,7 @@
 import random
 import typing
+import board
+import logic
 
 
 # info is called when you create your Battlesnake on play.battlesnake.com
@@ -32,15 +34,13 @@ def end(game_state: typing.Dict):
 # See https://docs.battlesnake.com/api/example-move for available data
 def move(game_state: typing.Dict) -> typing.Dict:
 
-  is_move_safe = {"up": True, "down": True, "left": True, "right": True}
+  curBoard = board.Board(game_state["board"])
+  headPosition = game_state["you"]["body"][0]
+  health = game_state["you"]["health"][0]
 
-  # start with general area
-  direction = {
-    "up": 5000 / (dist(head, (head[0], 0)) + 1),
-    "down": 5000 / (dist(head, (head[0], board.height)) + 1),
-    "right": 5000 / (dist((board.width, head[1]), head) + 1),
-    "left": 5000 / (dist((0, head[1]), head) + 1)
-  }
+  logic.getBestMove(curBoard, headPosition, health)
+
+  is_move_safe = {"up": True, "down": True, "left": True, "right": True}
 
   # We've included code to prevent your Battlesnake from moving backwards
   my_head = game_state["you"]["body"][0]  # Coordinates of your head
@@ -73,25 +73,24 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
   # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
   my_body = game_state['you']['body']
-  head = my_body[0]
 
-  temp = head.copy()
+  temp = my_head.copy()
   temp["x"] += 1
   if temp in my_body[1:] and my_body[1:].index(temp) != len(
       my_body) - 1:  # if body part not already there and is not tail
     is_move_safe["right"] = False
 
-  temp = head.copy()
+  temp = my_head.copy()
   temp["x"] -= 1
   if temp in my_body[1:] and my_body[1:].index(temp) != len(my_body) - 1:
     is_move_safe["left"] = False
 
-  temp = head.copy()
+  temp = my_head.copy()
   temp["y"] += 1
   if temp in my_body[1:] and my_body[1:].index(temp) != len(my_body) - 1:
     is_move_safe["up"] = False
 
-  temp = head.copy()
+  temp = my_head.copy()
   temp["y"] -= 1
   if temp in my_body[1:] and my_body[1:].index(temp) != len(my_body) - 1:
     is_move_safe["down"] = False
@@ -116,17 +115,18 @@ def move(game_state: typing.Dict) -> typing.Dict:
   food = game_state['board']['food']
   foodDistance = []
   for item in food:
-    foodDistance.append(abs(my_head.x + my_head.y - item.x - item.y))
+    foodDistance.append(
+      abs(my_head["x"] + my_head["y"] - item["x"] - item["y"]))
   # find the nearest food location
   smallestDistance = foodDistance.index(min(foodDistance))
   # plan the route to food
-  if (head.x - 1 == foodDistance[smallestDistance] - 1):
+  if (my_head["x"] - 1 + my_head["y"] == foodDistance[smallestDistance] - 1):
     next_move = 'left'
-  if (head.x + 1 == foodDistance[smallestDistance] - 1):
+  if (my_head["x"] + 1 + my_head["y"] == foodDistance[smallestDistance] - 1):
     next_move = 'right'
-  if (head.y + 1 == foodDistance[smallestDistance] - 1):
+  if (my_head["y"] + 1 + my_head["x"] == foodDistance[smallestDistance] - 1):
     next_move = 'up'
-  if (head.y - 1 == foodDistance[smallestDistance] - 1):
+  if (my_head["y"] - 1 + my_head["x"] == foodDistance[smallestDistance] - 1):
     next_move = 'down'
   #check also if that move is hitting its own body or tail
 

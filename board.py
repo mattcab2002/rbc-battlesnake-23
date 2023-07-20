@@ -1,4 +1,6 @@
 class Board():
-  
-  self.width = kwargs['width']
-  self.height = kwargs['height']
+  def __init(self,**gameState):
+    self.width = gameState['width']
+    self.height = gameState['height']
+    self.food = list(map(tuple, gameState['food']))
+
