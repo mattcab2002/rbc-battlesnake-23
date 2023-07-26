@@ -1,7 +1,8 @@
 import random
 import typing
-import board
-import logic
+
+#import board
+#import logic
 
 
 # info is called when you create your Battlesnake on play.battlesnake.com
@@ -34,11 +35,11 @@ def end(game_state: typing.Dict):
 # See https://docs.battlesnake.com/api/example-move for available data
 def move(game_state: typing.Dict) -> typing.Dict:
 
-  curBoard = board.Board(game_state["board"])
-  headPosition = game_state["you"]["body"][0]
-  health = game_state["you"]["health"][0]
+  #curBoard = board.Board(game_state["board"])
+  #headPosition = game_state["you"]["body"][0]
+  #health = game_state["you"]["health"][0]
 
-  logic.getBestMove(curBoard, headPosition, health)
+  #logic.getBestMove(curBoard, headPosition, health)
 
   is_move_safe = {"up": True, "down": True, "left": True, "right": True}
 
@@ -70,7 +71,9 @@ def move(game_state: typing.Dict) -> typing.Dict:
     is_move_safe["left"] = False
   if my_head["x"] == board_width - 1:
     is_move_safe["right"] = False
-
+  
+  print(is_move_safe)
+  
   # TODO: Step 2 - Prevent your Battlesnake from colliding with itself
   my_body = game_state['you']['body']
 
@@ -95,14 +98,37 @@ def move(game_state: typing.Dict) -> typing.Dict:
   if temp in my_body[1:] and my_body[1:].index(temp) != len(my_body) - 1:
     is_move_safe["down"] = False
 
+  print(is_move_safe)
+
   # TODO: Step 3 - Prevent your Battlesnake from colliding with other Battlesnakes
-  # opponents = game_state['board']['snakes']
+  opponents = game_state['board']['snakes']
+
+  snake_bodies = []
+  snake_heads = []
+  for snake in opponents:
+    if snake['id'] != game_state['you']['id']:
+      snake_heads.append([snake['head'], snake['length']])
+      snake_bodies.append(snake['body'])
+  print(snake_bodies)
+  
+  for body in snake_bodies:
+    for part in body:
+      if (my_head["x"]-part["x"]) == 2 and (my_head["y"]-part["y"]) == 0 :
+        is_move_safe["left"] = False
+      if (my_head["x"]-part["x"]) == -2 and (my_head["y"]-part["y"]) == 0 :
+        is_move_safe["right"] = False
+      if (my_head["y"]-part["y"]) == 2 and (my_head["x"]-part["x"]) == 0 :
+        is_move_safe["down"] = False
+      if (my_head["y"]-part["y"]) == -2 and (my_head["x"]-part["x"]) == 0 :
+        is_move_safe["up"] = False
 
   # Are there any safe moves left?
   safe_moves = []
   for move, isSafe in is_move_safe.items():
     if isSafe:
       safe_moves.append(move)
+
+  print(safe_moves)
 
   if len(safe_moves) == 0:
     print(f"MOVE {game_state['turn']}: No safe moves detected! Moving down")
@@ -113,21 +139,28 @@ def move(game_state: typing.Dict) -> typing.Dict:
 
   # TODO: Step 4 - Move towards food instead of random, to regain health and survive longer
   food = game_state['board']['food']
+  print(my_head["x"], my_head["y"])
+  print(food)
   foodDistance = []
   for item in food:
     foodDistance.append(
-      abs(my_head["x"] + my_head["y"] - item["x"] - item["y"]))
+      abs(my_head["x"] - item["x"]) + abs(my_head["y"] - item["y"]))
+  print(foodDistance)
   # find the nearest food location
   smallestDistance = foodDistance.index(min(foodDistance))
   # plan the route to food
-  if (my_head["x"] - 1 + my_head["y"] == foodDistance[smallestDistance] - 1):
-    next_move = 'left'
-  if (my_head["x"] + 1 + my_head["y"] == foodDistance[smallestDistance] - 1):
-    next_move = 'right'
-  if (my_head["y"] + 1 + my_head["x"] == foodDistance[smallestDistance] - 1):
-    next_move = 'up'
-  if (my_head["y"] - 1 + my_head["x"] == foodDistance[smallestDistance] - 1):
-    next_move = 'down'
+  if ("right" in safe_moves
+      and my_head["x"] - food[smallestDistance]["x"] < 0):
+    next_move = "right"
+  elif ("left" in safe_moves
+        and my_head["x"] - food[smallestDistance]["x"] > 0):
+    next_move = "left"
+  elif ("up" in safe_moves and my_head["y"] - food[smallestDistance]["y"] < 0):
+    next_move = "up"
+  elif ("down" in safe_moves
+        and my_head["y"] - food[smallestDistance]["y"] > 0):
+    next_move = "down"
+
   #check also if that move is hitting its own body or tail
 
   print(f"MOVE {game_state['turn']}: {next_move}")
